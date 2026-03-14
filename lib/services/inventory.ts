@@ -124,3 +124,24 @@ export async function applyMaterialTransaction(
   return requireData(result) as unknown as MaterialTransaction;
 }
 
+export async function getInventoryStockForMaterial(
+  supabase: SupabaseLikeClient,
+  input: { facilityId: string; materialId: string }
+) {
+  const result = await supabase
+    .from("inventory_stock")
+    .select("id,facility_id,material_id,on_hand,reserved,reorder_point,unit,created_by,created_at,updated_at")
+    .eq("facility_id", input.facilityId)
+    .eq("material_id", input.materialId)
+    .maybeSingle();
+
+  if (result.error) {
+    throw new Error(
+      [result.error.message, result.error.code ? `code=${result.error.code}` : ""]
+        .filter(Boolean)
+        .join(" • ")
+    );
+  }
+
+  return result.data as InventoryStock | null;
+}

@@ -9,6 +9,7 @@ import { listBom } from "@/lib/services/bom";
 import { listSuppliers } from "@/lib/services/suppliers";
 import { listInventoryStock, listMaterialTransactions } from "@/lib/services/inventory";
 import { applyMaterialTransactionAction, saveStockSettingsAction } from "./actions";
+import InventoryPanel, { InventoryTransactionsPanel } from "./InventoryPanel";
 
 function n(value: unknown) {
   const num = Number(value);
@@ -448,85 +449,7 @@ export default async function InventoryPage({
             </div>
           ) : null}
 
-          <div className="rounded-2xl border border-black/10 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/20">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-base font-semibold">Stock</h2>
-              <div className="text-sm text-black/60 dark:text-white/60">{stock.length} items</div>
-            </div>
-
-            <div className="mt-4 overflow-hidden rounded-2xl border border-black/10 dark:border-white/10">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-black/5 text-xs text-black/60 dark:bg-white/5 dark:text-white/60">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Material</th>
-                    <th className="px-4 py-3 font-medium">On hand</th>
-                    <th className="px-4 py-3 font-medium">Reserved</th>
-                    <th className="px-4 py-3 font-medium">Available</th>
-                    <th className="px-4 py-3 font-medium">Reorder</th>
-                    <th className="px-4 py-3 font-medium">Unit</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                  {stock.length ? (
-                    stock.map((s) => {
-                      const onHand = n(s.on_hand);
-                      const reserved = n(s.reserved);
-                      const reorderPoint = n(s.reorder_point);
-                      const available = Math.max(onHand - reserved, 0);
-                      const isLow = reorderPoint > 0 && available <= reorderPoint;
-                      return (
-                        <tr
-                          key={s.id}
-                          className={[
-                            "bg-white/50 dark:bg-black/10",
-                            isLow ? "ring-1 ring-amber-400/30" : "",
-                          ].join(" ")}
-                        >
-                          <td className="max-w-[18rem] px-4 py-3 font-medium">
-                            <div className="truncate" title={s.materials?.description ?? ""}>
-                              {s.materials?.name ?? "Material"}
-                              {s.materials?.code ? (
-                                <span className="ml-2 text-xs text-black/50 dark:text-white/50">
-                                  {s.materials.code}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-black/70 dark:text-white/70">
-                            {onHand.toFixed(4)}
-                          </td>
-                          <td className="px-4 py-3 text-black/70 dark:text-white/70">
-                            {reserved.toFixed(4)}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-black/80 dark:text-white/80">
-                            {available.toFixed(4)}
-                          </td>
-                          <td
-                            className={[
-                              "px-4 py-3",
-                              isLow ? "font-medium text-amber-800 dark:text-amber-200" : "text-black/70 dark:text-white/70",
-                            ].join(" ")}
-                          >
-                            {reorderPoint.toFixed(4)}
-                          </td>
-                          <td className="px-4 py-3 text-black/70 dark:text-white/70">{s.unit}</td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td
-                        className="px-4 py-10 text-center text-sm text-black/60 dark:text-white/60"
-                        colSpan={6}
-                      >
-                        No stock rows yet. Use a transaction or stock settings to create one.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <InventoryPanel stock={stock} transactions={transactions} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-2xl border border-black/10 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/20">
@@ -723,74 +646,9 @@ export default async function InventoryPage({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-black/10 bg-white/60 p-6 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/20">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-base font-semibold">Recent transactions</h2>
-              <div className="text-sm text-black/60 dark:text-white/60">{transactions.length}</div>
-            </div>
-
-            <div className="mt-4 overflow-hidden rounded-2xl border border-black/10 dark:border-white/10">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-black/5 text-xs text-black/60 dark:bg-white/5 dark:text-white/60">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">When</th>
-                    <th className="px-4 py-3 font-medium">Material</th>
-                    <th className="px-4 py-3 font-medium">Type</th>
-                    <th className="px-4 py-3 font-medium">Qty</th>
-                    <th className="px-4 py-3 font-medium">Supplier</th>
-                    <th className="px-4 py-3 font-medium">Ref</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/10 dark:divide-white/10">
-                  {transactions.length ? (
-                    transactions.map((t) => (
-                      <tr key={t.id} className="bg-white/50 dark:bg-black/10">
-                        <td className="px-4 py-3 text-black/60 dark:text-white/60">
-                          {new Date(t.created_at).toLocaleString()}
-                        </td>
-                        <td className="max-w-[16rem] px-4 py-3 font-medium">
-                          <div className="truncate">
-                            {t.materials?.name ?? "Material"}
-                            {t.materials?.code ? (
-                              <span className="ml-2 text-xs text-black/50 dark:text-white/50">
-                                {t.materials.code}
-                              </span>
-                            ) : null}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-black/70 dark:text-white/70">{t.txn_type}</td>
-                        <td className="px-4 py-3 text-black/70 dark:text-white/70">
-                          {n(t.quantity).toFixed(4)} {t.unit}
-                        </td>
-                        <td className="max-w-[14rem] px-4 py-3 text-black/70 dark:text-white/70">
-                          <div className="truncate" title={t.suppliers?.name ?? ""}>
-                            {t.suppliers?.name ?? "—"}
-                          </div>
-                        </td>
-                        <td className="max-w-[14rem] px-4 py-3 text-black/60 dark:text-white/60">
-                          <div className="truncate" title={t.reference ?? ""}>
-                            {t.reference ?? "—"}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        className="px-4 py-10 text-center text-sm text-black/60 dark:text-white/60"
-                        colSpan={6}
-                      >
-                        No transactions yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <InventoryTransactionsPanel transactions={transactions} />
         </div>
       </div>
     </div>
   );
 }
-

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseActionClient } from "@/lib/supabase/actions";
 import {
   applyMaterialTransaction,
+  getInventoryStockForMaterial,
   upsertInventoryStockSettings,
 } from "@/lib/services/inventory";
 
@@ -115,6 +116,37 @@ export async function applyMaterialTransactionAction(formData: FormData) {
   const supabase = await createSupabaseActionClient();
 
   try {
+    // Pre-validate stock to avoid opaque database errors for common cases.
+    if (txnType === "issue" || txnType === "adjustment") {
+      const stock = await getInventoryStockForMaterial(supabase, { facilityId, materialId });
+      const onHand = Number(stock?.on_hand ?? 0);
+
+      if (txnType === "issue") {
+        if (onHand < quantity) {
+          const msg = `Insufficient stock: on-hand ${onHand.toFixed(4)} ${stock?.unit ?? unit}, requested ${quantity.toFixed(
+            4
+          )} ${unit}.`;
+          redirect(
+            `/dashboard/inventory?organizationId=${encodeURIComponent(
+              organizationId
+            )}&facilityId=${encodeURIComponent(facilityId)}&error=${encodeURIComponent(msg)}`
+          );
+        }
+      } else {
+        // adjustment can be positive or negative; block adjustments that drive stock below 0.
+        if (onHand + quantity < 0) {
+          const msg = `Insufficient stock: on-hand ${onHand.toFixed(4)} ${stock?.unit ?? unit}, adjustment ${quantity.toFixed(
+            4
+          )} ${unit} would result in ${(onHand + quantity).toFixed(4)}.`;
+          redirect(
+            `/dashboard/inventory?organizationId=${encodeURIComponent(
+              organizationId
+            )}&facilityId=${encodeURIComponent(facilityId)}&error=${encodeURIComponent(msg)}`
+          );
+        }
+      }
+    }
+
     await applyMaterialTransaction(supabase, {
       facilityId,
       materialId,
@@ -140,4 +172,3 @@ export async function applyMaterialTransactionAction(formData: FormData) {
     )}&facilityId=${encodeURIComponent(facilityId)}&message=Transaction%20saved.`
   );
 }
-
