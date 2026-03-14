@@ -34,6 +34,7 @@ const navGroups = [
       { href: "/dashboard/operations", label: "Operations" },
       { href: "/dashboard/scheduling", label: "Scheduling" },
       { href: "/dashboard/scheduling/visual", label: "Visual planner" },
+      { href: "/dashboard/monitoring", label: "Production monitoring" },
     ],
   },
   {
