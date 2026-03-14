@@ -23,6 +23,27 @@ Open `http://localhost:3000`.
 - `/login` log in
 - `/dashboard` protected page (redirects to `/login` if not signed in)
 
+## Database schema (Supabase)
+
+This repo keeps SQL migrations in `supabase/migrations/`.
+
+- `supabase/migrations/20260314120000_create_organizations.sql` creates `public.organizations`:
+  - `id` (uuid, PK)
+  - `name` (text, required)
+  - `description` (text)
+  - `created_by` (uuid, defaults to `auth.uid()`)
+  - `created_at` (timestamptz, defaults to `now()`)
+
+- `supabase/migrations/20260314121000_create_facilities.sql` creates `public.facilities`:
+  - `id` (uuid, PK)
+  - `organization_id` (uuid, FK → `public.organizations.id`)
+  - `name` (text, required)
+  - `description` (text)
+  - `created_by` (uuid, defaults to `auth.uid()`)
+  - `created_at` (timestamptz, defaults to `now()`)
+
+To apply: open Supabase Dashboard → SQL Editor → run the migration SQL (or use Supabase CLI migrations if you have it set up).
+
 ## Deploy (Vercel)
 
 Set the same env vars in Vercel Project Settings, then deploy.

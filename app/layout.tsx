@@ -3,8 +3,9 @@ import "./globals.css";
 import SiteHeader from "./_components/site-header";
 
 export const metadata: Metadata = {
-  title: "Hackathon App",
-  description: "Next.js + Supabase auth starter",
+  title: "VizPlan",
+  description:
+    "AI-powered visual production scheduling with real-time capacity, resource allocation, and workflow visualization.",
 };
 
 export default function RootLayout({
