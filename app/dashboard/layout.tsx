@@ -1,11 +1,23 @@
 import Link from "next/link";
 import { ToasterProvider } from "@/app/components/Toaster";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { countOpenAlerts } from "@/lib/services/alerts";
+import { SidebarNav, type NavGroup } from "./SidebarNav";
 
-const navGroups = [
+const navGroups: NavGroup[] = [
+  {
+    label: "Dashboards",
+    defaultOpen: true,
+    items: [
+      { href: "/dashboard/kpi", label: "KPI dashboard", tag: "new" },
+      { href: "/dashboard/monitoring", label: "Production monitoring", tag: "live" },
+      { href: "/dashboard/exceptions", label: "Exceptions", tag: "alerts" },
+    ],
+  },
   {
     label: "Foundation",
+    defaultOpen: true,
     items: [
-      { href: "/dashboard", label: "Overview" },
       { href: "/dashboard/organizations", label: "Organizations" },
       { href: "/dashboard/facilities", label: "Facilities" },
       { href: "/dashboard/production-lines", label: "Production lines" },
@@ -13,6 +25,7 @@ const navGroups = [
   },
   {
     label: "Resources",
+    defaultOpen: true,
     items: [
       { href: "/dashboard/machines", label: "Machines" },
       { href: "/dashboard/workers", label: "Workers" },
@@ -21,6 +34,7 @@ const navGroups = [
   },
   {
     label: "Products",
+    defaultOpen: true,
     items: [
       { href: "/dashboard/products", label: "Products" },
       { href: "/dashboard/bom", label: "BOM" },
@@ -28,17 +42,19 @@ const navGroups = [
     ],
   },
   {
-    label: "Scheduling",
+    label: "Planning",
+    defaultOpen: false,
     items: [
       { href: "/dashboard/work-orders", label: "Work orders" },
       { href: "/dashboard/operations", label: "Operations" },
       { href: "/dashboard/scheduling", label: "Scheduling" },
       { href: "/dashboard/scheduling/visual", label: "Visual planner" },
-      { href: "/dashboard/monitoring", label: "Production monitoring" },
+      { href: "/dashboard/scenarios", label: "Scenario planning" },
     ],
   },
   {
     label: "Calendar",
+    defaultOpen: false,
     items: [
       { href: "/dashboard/calendar", label: "Calendar hub" },
       { href: "/dashboard/calendar/shifts", label: "Shifts" },
@@ -46,9 +62,15 @@ const navGroups = [
       { href: "/dashboard/calendar/maintenance", label: "Maintenance" },
     ],
   },
-] as const;
+];
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const openAlerts = user ? await countOpenAlerts(supabase) : 0;
+
   return (
     <ToasterProvider>
       <div className="flex min-h-screen bg-[#f7f7f2] text-black dark:bg-[#0f0f0f] dark:text-white">
@@ -66,27 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="mt-8 flex h-[calc(100vh-160px)] flex-col gap-4 overflow-y-auto pr-1">
-            {navGroups.map((group) => (
-              <details key={group.label} className="group" open>
-                <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5">
-                  <span>{group.label}</span>
-                  <span className="text-black/40 transition-transform group-open:rotate-90 dark:text-white/40">
-                    ›
-                  </span>
-                </summary>
-                <nav className="mt-2 space-y-1 px-1">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      className="block rounded-xl px-3 py-2 text-sm font-medium text-black/80 hover:bg-black/5 dark:text-white/80 dark:hover:bg-white/5"
-                      href={item.href}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-              </details>
-            ))}
+            <SidebarNav navGroups={navGroups} openAlerts={openAlerts} variant="desktop" />
           </div>
         </aside>
 
@@ -95,47 +97,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="text-xs uppercase tracking-[0.2em] text-black/50 dark:text-white/50">
               Navigation
             </div>
-            <div className="mt-3 space-y-3">
-              {navGroups.map((group) => (
-                <details key={group.label} className="group" open>
-                  <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/5">
-                    <span>{group.label}</span>
-                    <span className="text-black/40 transition-transform group-open:rotate-90 dark:text-white/40">
-                      ›
-                    </span>
-                  </summary>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-medium text-black hover:bg-black/5 dark:border-white/10 dark:bg-black/30 dark:text-white dark:hover:bg-white/5"
-                        href={item.href}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                </details>
-              ))}
-            </div>
+            <SidebarNav navGroups={navGroups} openAlerts={openAlerts} variant="mobile" />
           </div>
           <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-medium text-black shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/40 dark:text-white">
             <div className="flex items-center gap-3">
               <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white dark:bg-white dark:text-black">
                 Topnav
               </span>
-              <span className="text-base font-semibold text-black dark:text-white">Production Scheduling</span>
+              <span className="text-base font-semibold text-black dark:text-white">Control tower</span>
             </div>
             <div className="flex items-center gap-3">
-              {navGroups[0].items.slice(0, 3).map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-full border border-black/10 px-3 py-1 text-[0.75rem] uppercase tracking-[0.25em] text-black/70 hover:border-black hover:text-black dark:border-white/20 dark:text-white/60 dark:hover:text-white"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              <Link
+                href="/dashboard/kpi"
+                className="rounded-full border border-black/10 px-3 py-1 text-[0.75rem] uppercase tracking-[0.25em] text-black/70 hover:border-black hover:text-black dark:border-white/20 dark:text-white/60 dark:hover:text-white"
+              >
+                KPI
+              </Link>
+              <Link
+                href="/dashboard/monitoring"
+                className="rounded-full border border-black/10 px-3 py-1 text-[0.75rem] uppercase tracking-[0.25em] text-black/70 hover:border-black hover:text-black dark:border-white/20 dark:text-white/60 dark:hover:text-white"
+              >
+                Monitoring
+              </Link>
+              <Link
+                href="/dashboard/inventory"
+                className="rounded-full border border-black/10 px-3 py-1 text-[0.75rem] uppercase tracking-[0.25em] text-black/70 hover:border-black hover:text-black dark:border-white/20 dark:text-white/60 dark:hover:text-white"
+              >
+                Inventory
+              </Link>
+              <Link
+                href="/dashboard/exceptions"
+                className="relative rounded-full border border-black/10 px-3 py-1 text-[0.75rem] uppercase tracking-[0.25em] text-black/70 hover:border-black hover:text-black dark:border-white/20 dark:text-white/60 dark:hover:text-white"
+              >
+                Exceptions
+                {openAlerts ? (
+                  <span className="ml-2 inline-flex min-w-6 items-center justify-center rounded-full bg-red-600 px-2 py-0.5 text-[0.65rem] font-semibold text-white">
+                    {openAlerts}
+                  </span>
+                ) : null}
+              </Link>
             </div>
           </div>
           {children}

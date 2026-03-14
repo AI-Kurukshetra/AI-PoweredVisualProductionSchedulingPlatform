@@ -405,7 +405,15 @@ begin
   for update;
 
   if (coalesce(v_current, 0) + v_delta) < 0 then
-    raise exception 'Insufficient stock for issue/adjustment';
+    raise exception
+      using
+        errcode = 'P0001',
+        message = format(
+          'Insufficient stock for issue/adjustment (on_hand=%.4f, delta=%.4f, resulting=%.4f)',
+          coalesce(v_current, 0),
+          v_delta,
+          coalesce(v_current, 0) + v_delta
+        );
   end if;
 
   insert into public.material_transactions (
@@ -450,4 +458,3 @@ begin
   return v_tx;
 end;
 $$;
-

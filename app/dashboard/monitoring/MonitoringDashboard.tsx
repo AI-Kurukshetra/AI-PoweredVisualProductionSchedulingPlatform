@@ -16,7 +16,6 @@ import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { getMonitoringDataAction } from "./actions";
 import type {
   MonitoringData,
-  MachineUtilization,
   WorkerActivity,
   DelayedItem,
 } from "@/lib/services/monitoring";

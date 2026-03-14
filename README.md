@@ -17,6 +17,17 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Seeding (optional)
+
+`npm run seed:users` creates a single Supabase auth user via the Admin API.
+
+Required env vars:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (keep server-only)
+- `SEED_USER_EMAIL`
+- `SEED_USER_PASSWORD`
+
 ## Routes
 
 - `/signup` create account
